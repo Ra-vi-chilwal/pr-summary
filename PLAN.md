@@ -1,0 +1,21 @@
+# PLAN.md
+
+What we build next. One small feature at a time; wait for "ok" before code.
+
+## Now: finish Milestone 1 (needs you)
+Goal: one real PR diff → a summary a reviewer says is accurate and tells them what to check first.
+This tests the riskiest guess in PRODUCT.md.
+
+1. Put your Anthropic key in a local `.env` (copy `.env.example`). Backend only, never committed.
+2. Restart the API: `docker compose up -d --force-recreate api`.
+3. Pick one real PR from **your own** repo (~14 files). Run `gh pr diff <number> > pr.diff`.
+4. Open http://localhost:5180 (moved from 5173, which another project uses), paste the diff, press Summarize. Expected cost: about $0.05–0.20.
+5. Show the comment to the PR's reviewer or author. Save their verdict in the form.
+6. Fill in "What happened" in PRODUCT.md. Decide: keep going / change the problem / change the product.
+
+Gate to Milestone 2: the verdict is "yes" or "partly" and the reviewer says it would have saved time.
+
+## Next: Milestone 2 (plan only, not approved)
+Receive the "PR opened" webhook from a GitHub App on one test repo, verify its signature,
+fetch the changed files. Still post nothing. Needs: a GitHub App created by you, its secret
+and private key in backend env vars.

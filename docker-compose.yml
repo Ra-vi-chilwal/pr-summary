@@ -1,0 +1,47 @@
+# Local dev only. Production uses Neon (DATABASE_URL) and Render, set in their dashboards.
+# Secrets (GEMINI_API_KEY etc.) come from backend/.env (gitignored) - see backend/.env.example.
+# DATABASE_URL below always wins over backend/.env, so the app uses its own Postgres here.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: pr_summary
+      POSTGRES_PASSWORD: local_dev_only
+      POSTGRES_DB: pr_summary
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pr_summary"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - path: ./backend/.env
+        required: false
+    environment:
+      DATABASE_URL: postgresql+psycopg://pr_summary:local_dev_only@db:5432/pr_summary
+      ENABLE_DEV_TOOLS: "true"
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      API_PROXY_TARGET: http://api:8000
+    ports:
+      - "5180:5173"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
