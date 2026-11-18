@@ -9,6 +9,9 @@ export interface SummarizeResult {
   skipped: { path: string; reason: string }[];
   summary_id: number | null;
   comment_markdown: string | null;
+  /** Set only when a PR link was pasted: the diff GitHub returned (never stored). */
+  diff?: string | null;
+  title?: string;
 }
 
 export interface Verdict {
@@ -62,8 +65,33 @@ async function request<T>(url: string, body?: unknown): Promise<T> {
       ? undefined
       : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
   );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) {
+    // The backend sends safe, human messages in `detail` (e.g. "Couldn't read this PR...").
+    let detail: unknown = null;
+    try {
+      detail = ((await res.json()) as { detail?: unknown }).detail;
+    } catch {
+      /* not JSON */
+    }
+    throw new ApiError(res.status, typeof detail === "string" ? detail : null);
+  }
   return (await res.json()) as T;
+}
+
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public detail: string | null,
+  ) {
+    super(detail ?? `HTTP ${status}`);
+  }
+}
+
+/** A GitHub PR link pasted on its own: the backend will fetch the diff. */
+export function isPrLink(text: string): boolean {
+  return /^https?:\/\/(www\.)?(github\.com|patch-diff\.githubusercontent\.com\/raw)\/[^/\s]+\/[^/\s]+\/pull\/\d+\S*$/.test(
+    text.trim(),
+  );
 }
 
 export function summarize(diff: string, title: string): Promise<SummarizeResult> {

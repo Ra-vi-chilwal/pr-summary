@@ -1,8 +1,7 @@
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockFetch, renderAt } from "./testUtils";
-import { diffLinkFor } from "./TryDiff";
-import { countFiles, type SummarizeResult } from "./api";
+import { countFiles, isPrLink, type SummarizeResult } from "./api";
 
 const DIFF = "diff --git a/a.py b/a.py\n+x\ndiff --git a/b.py b/b.py\n+y\n";
 
@@ -21,7 +20,7 @@ function result(overrides: Partial<SummarizeResult>): SummarizeResult {
 }
 
 function pasteAndSubmit(text = DIFF) {
-  fireEvent.change(screen.getByPlaceholderText(/diff --git/), { target: { value: text } });
+  fireEvent.change(screen.getByPlaceholderText(/github.com/), { target: { value: text } });
   fireEvent.click(screen.getByRole("button", { name: "Summarize" }));
 }
 
@@ -33,7 +32,7 @@ afterEach(() => {
 describe("TryDiff", () => {
   it("starts empty with Summarize disabled", () => {
     renderAt("/try");
-    expect(screen.getByText("Paste a diff to see the summary.")).toBeTruthy();
+    expect(screen.getByText("Paste a PR link to see the summary.")).toBeTruthy();
     expect((screen.getByRole("button", { name: "Summarize" }) as HTMLButtonElement).disabled).toBe(
       true,
     );
@@ -113,21 +112,48 @@ describe("countFiles", () => {
   });
 });
 
-describe("pasting a PR link instead of the diff", () => {
-  it("explains what to do and sends nothing", () => {
-    const fetchFn = mockFetch();
+describe("pasting a PR link", () => {
+  it("sends the link, then keeps the diff GitHub returned for the Review screen", async () => {
+    const fetchedDiff = [
+      "diff --git a/src/app.py b/src/app.py",
+      "--- a/src/app.py",
+      "+++ b/src/app.py",
+      "@@ -1 +1 @@",
+      "-a",
+      "+b",
+      "",
+    ].join("\n");
+    const fetchFn = mockFetch(result({ diff: fetchedDiff, title: "chnage in the branch" }));
     renderAt("/try");
     pasteAndSubmit("https://github.com/Ra-vi-chilwal/trustRush-fastAPI/pull/1");
-    expect(screen.getByText("That's a link to the PR, not the diff. Nothing was sent.")).toBeTruthy();
-    expect(
-      screen.getByRole("link", { name: "https://github.com/Ra-vi-chilwal/trustRush-fastAPI/pull/1.diff" }),
-    ).toBeTruthy();
-    expect(fetchFn).not.toHaveBeenCalled();
+    expect(screen.getByText("Getting the PR from GitHub and reading it...")).toBeTruthy();
+    await waitFor(() => screen.getByTestId("comment"));
+    expect(JSON.parse(fetchFn.mock.calls[0][1].body).diff).toBe(
+      "https://github.com/Ra-vi-chilwal/trustRush-fastAPI/pull/1",
+    );
+    expect((screen.getByLabelText(/PR title/) as HTMLInputElement).value).toBe("chnage in the branch");
   });
 
-  it("recognizes PR links but not real diffs", () => {
-    expect(diffLinkFor(" https://github.com/a/b/pull/12/files ")).toBe("https://github.com/a/b/pull/12.diff");
-    expect(diffLinkFor("diff --git a/x b/x")).toBeNull();
-    expect(diffLinkFor("https://example.com/a/b/pull/1")).toBeNull();
+  it("shows the backend's message when the PR can't be read", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 422,
+        json: async () => ({ detail: "Couldn't read this PR. Nothing was sent to the AI." }),
+      }),
+    );
+    renderAt("/try");
+    pasteAndSubmit("https://github.com/a/private-repo/pull/3");
+    await waitFor(() => screen.getByText("Couldn't read this PR. Nothing was sent to the AI."));
+  });
+});
+
+describe("isPrLink", () => {
+  it("recognizes PR links but not diffs", () => {
+    expect(isPrLink(" https://github.com/a/b/pull/12/files ")).toBe(true);
+    expect(isPrLink("https://patch-diff.githubusercontent.com/raw/a/b/pull/1.diff")).toBe(true);
+    expect(isPrLink("diff --git a/x b/x")).toBe(false);
+    expect(isPrLink("https://example.com/a/b/pull/1")).toBe(false);
   });
 });

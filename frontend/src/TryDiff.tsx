@@ -1,21 +1,20 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { type SummarizeResult, type Verdict, countFiles, saveVerdict, summarize } from "./api";
+import {
+  ApiError,
+  type SummarizeResult,
+  type Verdict,
+  countFiles,
+  isPrLink,
+  saveVerdict,
+  summarize,
+} from "./api";
 import { useDiffStore } from "./diffStore";
-
-const PR_LINK = /^https?:\/\/github\.com\/[^/\s]+\/[^/\s]+\/pull\/\d+/;
-
-/** If someone pastes a PR link instead of the diff text, return the .diff link to open. */
-export function diffLinkFor(text: string): string | null {
-  const match = PR_LINK.exec(text.trim());
-  return match && !text.includes("diff --git") ? `${match[0]}.diff` : null;
-}
 
 type Phase =
   | { kind: "idle" }
-  | { kind: "link"; diffUrl: string }
-  | { kind: "loading"; files: number }
-  | { kind: "error" }
+  | { kind: "loading"; text: string }
+  | { kind: "error"; message: string | null }
   | { kind: "result"; result: SummarizeResult };
 
 export function TryDiff() {
@@ -25,18 +24,19 @@ export function TryDiff() {
   const diffStore = useDiffStore();
 
   async function run() {
-    const diffUrl = diffLinkFor(diff);
-    if (diffUrl) {
-      setPhase({ kind: "link", diffUrl });
-      return;
-    }
-    setPhase({ kind: "loading", files: countFiles(diff) });
+    const link = isPrLink(diff);
+    setPhase({
+      kind: "loading",
+      text: link ? "Getting the PR from GitHub and reading it..." : `Reading ${countFiles(diff)} files...`,
+    });
     try {
       const result = await summarize(diff, title);
-      diffStore.set(result.run_id, diff); // tab memory only, for the Review screen
+      // Tab memory only, for the Review screen. For a link, the backend sends back the diff it read.
+      diffStore.set(result.run_id, result.diff ?? diff);
+      if (link && result.title) setTitle(result.title);
       setPhase({ kind: "result", result });
-    } catch {
-      setPhase({ kind: "error" });
+    } catch (e) {
+      setPhase({ kind: "error", message: e instanceof ApiError ? e.detail : null });
     }
   }
 
@@ -49,10 +49,10 @@ export function TryDiff() {
           Try a diff <span className="tag">Dev only</span>
         </h1>
         <p className="meta">
-          Open your PR on GitHub with <code>.diff</code> added to the end of its URL, copy all of
-          that text and paste it here. We send the code
-          files to the AI for this summary only and don&apos;t store the diff. Nothing is posted to
-          GitHub.
+          Paste the link to a <b>public</b> GitHub pull request (for example{" "}
+          <code>https://github.com/you/repo/pull/1</code>), or paste the diff text itself. We send
+          the code files to the AI for this summary only and don&apos;t store the diff. Nothing is
+          posted to GitHub.
         </p>
       </header>
 
@@ -62,13 +62,13 @@ export function TryDiff() {
           <input value={title} onChange={(e) => setTitle(e.target.value)} disabled={loading} />
         </label>
         <label>
-          Diff
+          PR link or diff
           <textarea
             className="mono"
-            rows={12}
+            rows={8}
             value={diff}
             onChange={(e) => setDiff(e.target.value)}
-            placeholder="diff --git a/src/app.py b/src/app.py ..."
+            placeholder="https://github.com/you/repo/pull/1"
             disabled={loading}
             spellCheck={false}
           />
@@ -79,23 +79,11 @@ export function TryDiff() {
       </section>
 
       <section aria-live="polite">
-        {phase.kind === "idle" && <p className="meta">Paste a diff to see the summary.</p>}
-        {phase.kind === "link" && (
-          <div className="notice">
-            <p>That&apos;s a link to the PR, not the diff. Nothing was sent.</p>
-            <p>
-              Open{" "}
-              <a href={phase.diffUrl} target="_blank" rel="noreferrer" className="mono">
-                {phase.diffUrl}
-              </a>
-              , press Ctrl+A then Ctrl+C, and paste that text here instead of the link.
-            </p>
-          </div>
-        )}
-        {phase.kind === "loading" && <p>Reading {phase.files} files...</p>}
+        {phase.kind === "idle" && <p className="meta">Paste a PR link to see the summary.</p>}
+        {phase.kind === "loading" && <p>{phase.text}</p>}
         {phase.kind === "error" && (
           <div className="notice error">
-            <p>Couldn&apos;t reach the server. Nothing was posted.</p>
+            <p>{phase.message ?? "Couldn't reach the server. Nothing was posted."}</p>
             <button onClick={run}>Try again</button>
           </div>
         )}

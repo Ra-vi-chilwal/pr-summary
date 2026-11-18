@@ -121,7 +121,7 @@ describe("Review", () => {
       DETAIL,
     ); // prettier-ignore
     renderAt("/try");
-    fireEvent.change(screen.getByPlaceholderText(/diff --git/), { target: { value: diff } });
+    fireEvent.change(screen.getByPlaceholderText(/github.com/), { target: { value: diff } });
     fireEvent.click(screen.getByRole("button", { name: "Summarize" }));
     await waitFor(() => screen.getByRole("link", { name: "Open the review with the diff" }));
     fireEvent.click(screen.getByRole("link", { name: "Open the review with the diff" }));

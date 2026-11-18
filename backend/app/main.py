@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Callable
 from typing import Literal
 
 from fastapi import Depends, FastAPI, HTTPException
@@ -9,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.ai import Summarizer, make_summarizer
 from app.config import Settings
 from app.db import Base, get_session, make_engine, make_session_factory
+from app.github_public import PRFetchError, PRLink, fetch_public_pr, parse_pr_link
 from app.models import Run, Summary, utcnow
 from app.service import month_spend_microusd, summarize_diff
 
@@ -34,6 +36,10 @@ class SummarizeOut(BaseModel):
     skipped: list[SkippedOut]
     summary_id: int | None
     comment_markdown: str | None
+    # Only set when the user pasted a PR link: the fetched diff goes back to their own
+    # browser so the Review screen can show it. It is never stored.
+    diff: str | None = None
+    title: str = ""
 
 
 class VerdictIn(BaseModel):
@@ -84,7 +90,11 @@ def _run_out(run: Run, summary_id: int | None) -> RunOut:
 _UNSET = object()
 
 
-def create_app(settings: Settings | None = None, summarizer: object = _UNSET) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    summarizer: object = _UNSET,
+    pr_fetcher: Callable[[PRLink], tuple[str, str]] = fetch_public_pr,
+) -> FastAPI:
     settings = settings or Settings()
     engine = make_engine(settings.database_url)
     Base.metadata.create_all(engine)
@@ -111,10 +121,19 @@ def create_app(settings: Settings | None = None, summarizer: object = _UNSET) ->
         @app.post("/api/dev/summaries", response_model=SummarizeOut)
         def create_summary(body: SummarizeIn, session: Session = Depends(get_session)):
             ai: Summarizer | None = app.state.summarizer
-            outcome = summarize_diff(
-                session, ai, body.diff, body.title, settings.monthly_spend_cap_usd
-            )
+            diff_text, title, fetched = body.diff, body.title, False
+            link = parse_pr_link(body.diff)
+            if link:
+                try:
+                    diff_text, pr_title = pr_fetcher(link)
+                except PRFetchError as e:
+                    raise HTTPException(status_code=422, detail=str(e)) from e
+                title = title.strip() or pr_title or f"{link.repo} #{link.number}"
+                fetched = True
+            outcome = summarize_diff(session, ai, diff_text, title, settings.monthly_spend_cap_usd)
             return SummarizeOut(
+                diff=diff_text if fetched else None,
+                title=title,
                 run_id=outcome.run_id,
                 status=outcome.status,
                 message=outcome.message,
