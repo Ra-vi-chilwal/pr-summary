@@ -8,8 +8,10 @@ This tests the riskiest guess in PRODUCT.md.
 
 1. Put your new Gemini key in `backend/.env` as `GEMINI_API_KEY=` (see `backend/.env.example`). Never commit it, never paste it in chat.
 2. Restart the API: `docker compose up -d --force-recreate api`.
-3. Pick one real PR from **your own** repo (~14 files). Run `gh pr diff <number> > pr.diff`.
-4. Open http://localhost:5180 (moved from 5173, which another project uses), paste the diff, press Summarize. Expected cost: about $0.05–0.20.
+3. Pick one real PR from **your own** repo (~14 files). Open its URL with `.diff` at the end
+   (e.g. `https://github.com/Ra-vi-chilwal/<repo>/pull/1.diff`) and copy all of it.
+4. Open http://localhost:5180 (moved from 5173, which another project uses), paste the diff, press
+   Summarize. Gemini free tier: $0 (counted as about $0.01–0.05 against the $10 cap).
 5. You judge it as the reviewer (note: the PR's own author is a weaker test than a second person). Save the verdict in the form.
 6. Fill in "What happened" in PRODUCT.md. Decide: keep going / change the problem / change the product.
 
