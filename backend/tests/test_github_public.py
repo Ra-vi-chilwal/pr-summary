@@ -88,18 +88,18 @@ def test_api_summarizes_a_pasted_pr_link():
         return make_diff("src/app.py"), "chnage in the branch"
 
     c = app_client(fetcher, FakeSummarizer([ok_response(["src/app.py"])]))
-    body = c.post("/api/dev/summaries", json={"diff": LINK.diff_url, "title": ""}).json()
+    body = c.post("/api/summaries", json={"diff": LINK.diff_url, "title": ""}).json()
     assert seen == [LINK]
     assert body["status"] == "done"
     assert body["title"] == "chnage in the branch"
     assert body["diff"].startswith("diff --git")  # back to the browser for the Review screen
-    run = c.get(f"/api/dev/runs/{body['run_id']}").json()
+    run = c.get(f"/api/runs/{body['run_id']}").json()
     assert run["run"]["title"] == "chnage in the branch"
 
 
 def test_api_pasted_diff_is_not_echoed_back():
     c = app_client(lambda link: pytest.fail("should not fetch"), FakeSummarizer())
-    body = c.post("/api/dev/summaries", json={"diff": make_diff("src/app.py")}).json()
+    body = c.post("/api/summaries", json={"diff": make_diff("src/app.py")}).json()
     assert body["diff"] is None
 
 
@@ -108,7 +108,7 @@ def test_api_fetch_failure_returns_message_and_creates_no_run():
         raise PRFetchError("Couldn't read this PR. Nothing was sent to the AI.")
 
     c = app_client(fetcher)
-    r = c.post("/api/dev/summaries", json={"diff": "https://github.com/a/b/pull/9"})
+    r = c.post("/api/summaries", json={"diff": "https://github.com/a/b/pull/9"})
     assert r.status_code == 422
     assert r.json()["detail"] == "Couldn't read this PR. Nothing was sent to the AI."
-    assert c.get("/api/dev/runs").json()["runs"] == []
+    assert c.get("/api/runs").json()["runs"] == []

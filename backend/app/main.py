@@ -57,6 +57,8 @@ class RunOut(BaseModel):
     files_kept: int
     created_at: str
     summary_id: int | None
+    repo: str | None = None
+    pr_number: int | None = None
 
 
 class RunListOut(BaseModel):
@@ -116,9 +118,9 @@ def create_app(
     def health() -> dict:
         return {"ok": True}
 
-    if settings.enable_dev_tools:
+    if True:  # routers replace this block in the auth step
 
-        @app.post("/api/dev/summaries", response_model=SummarizeOut)
+        @app.post("/api/summaries", response_model=SummarizeOut)
         def create_summary(body: SummarizeIn, session: Session = Depends(get_session)):
             ai: Summarizer | None = app.state.summarizer
             diff_text, title, fetched = body.diff, body.title, False
@@ -144,7 +146,7 @@ def create_app(
                 comment_markdown=outcome.comment_markdown,
             )
 
-        @app.post("/api/dev/summaries/{summary_id}/verdict")
+        @app.post("/api/summaries/{summary_id}/verdict")
         def save_verdict(
             summary_id: int, body: VerdictIn, session: Session = Depends(get_session)
         ) -> dict:
@@ -158,7 +160,7 @@ def create_app(
             session.commit()
             return {"ok": True}
 
-        @app.get("/api/dev/runs", response_model=RunListOut)
+        @app.get("/api/runs", response_model=RunListOut)
         def list_runs(session: Session = Depends(get_session)) -> RunListOut:
             rows = session.execute(
                 select(Run, Summary.id)
@@ -174,7 +176,7 @@ def create_app(
                 spend_cap_usd=settings.monthly_spend_cap_usd,
             )
 
-        @app.get("/api/dev/runs/{run_id}", response_model=RunDetailOut)
+        @app.get("/api/runs/{run_id}", response_model=RunDetailOut)
         def get_run(run_id: int, session: Session = Depends(get_session)) -> RunDetailOut:
             run = session.get(Run, run_id)
             if run is None:

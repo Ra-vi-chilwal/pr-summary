@@ -1,0 +1,123 @@
+/*
+ * PR Summary design tokens. Every colour, size, radius and duration in the app comes
+ * from here; components never hard-code values.
+ *
+ * Direction: a calm, precise developer tool. Warm off-white paper, near-black ink,
+ * hairline rules instead of shadows, one confident accent (deep pine) used sparingly.
+ * Risk is amber/red as a thin left rule, never a loud box.
+ * Contrast pairs are checked to WCAG AA (see tokens.test.ts).
+ */
+:root {
+  /* ---- Colour: neutrals ---- */
+  --color-bg: #faf9f6; /* page: warm off-white */
+  --color-surface: #ffffff; /* raised content: comment, inputs */
+  --color-surface-sunken: #f3f1ec; /* sidebar, table headers, hunks */
+  --color-surface-hover: #efece5;
+  --color-text: #1c1b19; /* ink */
+  --color-text-muted: #625e56; /* meta, secondary copy (AA on bg and sunken) */
+  --color-border: #e5e1d8; /* hairline */
+  --color-border-strong: #cdc7ba; /* inputs, focusable edges */
+
+  /* ---- Colour: the one accent ---- */
+  --color-accent: #0e6b58; /* deep pine */
+  --color-accent-hover: #0a5546;
+  --color-accent-soft: #e2efe9;
+  --color-on-accent: #ffffff;
+
+  /* ---- Colour: semantic ---- */
+  --color-risk-high: #b42318;
+  --color-risk-high-soft: #fcebe9;
+  --color-risk-medium: #a15c07;
+  --color-risk-medium-soft: #fdf1df;
+  --color-success: #1a7333;
+  --color-diff-add-bg: #e4f3e8;
+  --color-diff-add-gutter: #cfe9d6;
+  --color-diff-del-bg: #fbe9e7;
+  --color-diff-del-gutter: #f5d3cf;
+  --color-diff-hunk-bg: #eeebe4;
+  --color-focus: #0e6b58;
+  --color-skeleton: #ebe8e1;
+  --color-skeleton-shine: #f6f4ef;
+  --color-overlay: rgba(28, 27, 25, 0.32);
+
+  /* ---- Type ---- */
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --text-xs: 0.75rem; /* 12 */
+  --text-sm: 0.8125rem; /* 13: meta, tags, mono paths */
+  --text-base: 0.9375rem; /* 15: body, buttons */
+  --text-md: 1.0625rem; /* 17 */
+  --text-lg: 1.25rem; /* 20: section titles */
+  --text-xl: 1.75rem; /* 28: page titles */
+  --text-2xl: 2.5rem; /* 40: landing headline */
+
+  --leading-tight: 1.15;
+  --leading-snug: 1.35;
+  --leading-normal: 1.55;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --tracking-tighter: -0.032em; /* 40px headline */
+  --tracking-tight: -0.02em; /* page titles */
+  --tracking-normal: 0;
+  --tracking-caps: 0.06em; /* small uppercase labels */
+
+  /* ---- Space (4px grid) ---- */
+  --space-0-5: 0.125rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+
+  /* ---- Radii ---- */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-full: 999px;
+
+  /* ---- Lines, focus, elevation ---- */
+  --hairline: 1px solid var(--color-border);
+  --rule-strong: 1px solid var(--color-border-strong);
+  --risk-rule-width: 3px;
+  --focus-ring: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-focus);
+  --shadow-pop: 0 8px 24px rgba(28, 27, 25, 0.12), 0 1px 2px rgba(28, 27, 25, 0.08); /* toasts & drawers only */
+
+  /* ---- Layout ---- */
+  --sidebar-width: 252px;
+  --filelist-width: 288px;
+  --content-max: 1080px;
+  --prose-max: 68ch;
+  --control-height: 2.25rem;
+  --control-height-lg: 2.625rem;
+  --topbar-height: 3.25rem;
+
+  /* ---- Motion ---- */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 1200ms;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  /* ---- Layers ---- */
+  --z-sticky: 10;
+  --z-drawer: 40;
+  --z-toast: 50;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+  }
+}

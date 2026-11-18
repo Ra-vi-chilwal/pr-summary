@@ -140,7 +140,10 @@ def summarize_diff(
         run_id=run.id,
         model=response.usage.model,
         comment_markdown=comment,
-        result_json=result.model_dump(),
+        result_json={
+            **result.model_dump(),
+            "skipped": [{"path": s.path, "reason": s.reason} for s in plan.skipped],
+        },
     )
     session.add(summary)
     session.flush()
