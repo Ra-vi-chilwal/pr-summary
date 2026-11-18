@@ -8,7 +8,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    proxy: { "/api": process.env.API_PROXY_TARGET ?? "http://localhost:8000" },
+    // xfwd passes the browser's IP on, so per-IP rate limits work behind the proxy.
+    proxy: { "/api": { target: process.env.API_PROXY_TARGET ?? "http://localhost:8000", xfwd: true } },
   },
   test: { environment: "jsdom" },
 });

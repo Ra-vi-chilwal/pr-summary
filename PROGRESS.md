@@ -1,5 +1,51 @@
 # PROGRESS.md
 
+## 2026-11-18: Redesign, accounts, GitHub App, logging
+
+### Done (5 commits)
+1. **Design system**: `frontend/src/design/tokens.css` (colours, type scale, spacing, radii, motion),
+   with WCAG AA contrast checked by tests. Self-hosted Geist and JetBrains Mono fonts.
+2. **Redesign**: sidebar shell (connection status, account, mobile drawer); Get started; Dashboard
+   (usage, repos with a Private badge, open PRs, recent summaries); Try a diff; Summary page with a
+   sticky file list, coverage meter explaining skipped files, numbered check-first items with a risk
+   rule, skeleton loaders and a copy toast; error boundary; frontend logger.
+3. **Logging foundation**: structlog JSON with `LOG_LEVEL`, request IDs, a redaction filter, an
+   `audit_log` table, and Alembic migrations (0001 adopted the existing local database: 11 old runs kept).
+4. **Accounts**: signup and login (argon2id) with a strength hint, httpOnly SameSite=Lax session
+   cookies, CSRF, per-IP and per-email rate limits, field-level messages, GitHub sign-in, and
+   protected Dashboard and Summary routes. Try a diff stays public. Forgot password is a placeholder.
+5. **GitHub App**: install flow, links an installation only after GitHub confirms it's the user's,
+   cached installation tokens, repos and PRs, private PR links on Try a diff, webhook (signature,
+   installation events, one comment per PR edited on new commits, no duplicate AI calls, nothing
+   posted on failure, 50 per repo per month), clear errors.
+6. README: how to run locally and how to create the GitHub App.
+
+### Checks run (real results)
+- Backend: **155 passed**, ruff clean. Frontend: **57 passed**, lint, types and build clean.
+- docker: migrations applied to the existing Postgres. Real signup → session → protected runs through
+  localhost:5180. A POST without the CSRF token got 403. The audit log recorded the signup.
+- Logs scanned for the test password, session cookie, API keys, tokens, PEM, diff text and DB
+  password: 0 hits each.
+- Screenshots at desktop and phone width for signup, login errors, Get started, Dashboard (real),
+  phone menu, and the Try result, Summary, file diff and copy toast (sample data faked in the
+  screenshot browser only).
+
+### What broke
+- **Gemini returned 503 (overloaded) on 3 real runs today** (runs 12 and 14; the same PR worked
+  yesterday). The app did what it should: 1 retry, "Failed, nothing posted.", reason in the logs.
+- The screenshots showed a long email spilling out of the sidebar footer. Fixed (ellipsis).
+- One test run took 42 minutes once; it couldn't be reproduced (the suite takes about 17 s).
+
+### Not done / needs you
+- **The GitHub App isn't created yet**, so "Connect GitHub", GitHub sign-in and webhooks are built and
+  tested against a fake GitHub only. Follow README → "Create the GitHub App".
+- Webhooks to localhost need smee.io or ngrok (outside services; agree first).
+- `SECRET_KEY` isn't set in `backend/.env`, so sign-in state resets on restart. Add it.
+- The repo `Ra-vi-chilwal/pr-summary` still can't be reached, so nothing has been pushed.
+- PRODUCT.md (login decision) and DESIGN.md (fonts, colours) disagree with the new direction and
+  need updating by you.
+- Dark mode: not added (light mode is primary, as asked).
+
 ## 2026-11-18: Step 1, Gemini option + git
 
 ### Decisions (from you)

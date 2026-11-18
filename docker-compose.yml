@@ -25,7 +25,7 @@ services:
         required: false
     environment:
       DATABASE_URL: postgresql+psycopg://pr_summary:local_dev_only@db:5432/pr_summary
-      ENABLE_DEV_TOOLS: "true"
+      APP_BASE_URL: http://localhost:5180
     ports:
       - "8000:8000"
     depends_on:

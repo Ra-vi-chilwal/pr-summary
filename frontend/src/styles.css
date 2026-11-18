@@ -1350,3 +1350,139 @@ a.row:focus-visible {
     width: auto;
   }
 }
+
+/* =========================================================== auth */
+.auth {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  min-height: 100vh;
+}
+
+.auth-form-side {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-8) var(--space-10);
+}
+
+.auth-form-wrap {
+  flex: 1;
+  width: 100%;
+  max-width: 24rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-5);
+  padding: var(--space-12) 0;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.field-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-top: var(--hairline);
+}
+
+.strength {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.strength-bars {
+  display: inline-flex;
+  gap: var(--space-1);
+  flex: none;
+}
+
+.strength-bars span {
+  width: var(--space-5);
+  height: var(--space-1);
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+}
+
+.strength[data-level="1"] .strength-bars span:nth-child(-n + 1) {
+  background: var(--color-risk-high);
+}
+
+.strength[data-level="2"] .strength-bars span:nth-child(-n + 2) {
+  background: var(--color-risk-medium);
+}
+
+.strength[data-level="3"] .strength-bars span {
+  background: var(--color-success);
+}
+
+.auth-shot-side {
+  background: var(--color-surface-sunken);
+  border-left: var(--hairline);
+  display: flex;
+  align-items: center;
+  padding: var(--space-12) var(--space-10);
+}
+
+.auth-shot {
+  width: 100%;
+  max-width: 34rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+@media (max-width: 960px) {
+  .auth {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .auth-form-side {
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .auth-form-wrap {
+    padding: var(--space-8) 0;
+  }
+
+  .auth-shot-side {
+    border-left: 0;
+    border-top: var(--hairline);
+    padding: var(--space-8) var(--space-4);
+  }
+}
+
+/* Long names and emails truncate instead of spilling out of the sidebar. */
+.account-text > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account .btn {
+  flex: none;
+}
+
+.sidebar {
+  overflow: hidden;
+}

@@ -2,22 +2,18 @@
 
 What we build next. One small feature at a time; wait for "ok" before code.
 
-## Now: finish Milestone 1 (needs you)
-Goal: one real PR diff → a summary a reviewer says is accurate and tells them what to check first.
-This tests the riskiest guess in PRODUCT.md.
+## Next: connect the real GitHub App (needs you)
+1. Add `SECRET_KEY` to `backend/.env` (command in `backend/.env.example`).
+2. Create the GitHub App: README → "Create the GitHub App". Put its 6 values in `backend/.env`.
+3. `docker compose up -d --force-recreate api`.
+4. Sign in at http://localhost:5180, click "Connect GitHub", pick trustRush-fastAPI.
+5. Dashboard → the repo → PR #1 → Summarize. (Needs Gemini to be up again.)
+6. For automatic comments: pick smee.io or ngrok (outside service: your call), set the webhook URL,
+   push a commit to the PR, and check that one comment appears and is edited on the next push.
 
-1. Put your new Gemini key in `backend/.env` as `GEMINI_API_KEY=` (see `backend/.env.example`). Never commit it, never paste it in chat.
-2. Restart the API: `docker compose up -d --force-recreate api`.
-3. Pick one real PR from **your own** repo (~14 files). Open its URL with `.diff` at the end
-   (e.g. `https://github.com/Ra-vi-chilwal/<repo>/pull/1.diff`) and copy all of it.
-4. Open http://localhost:5180 (moved from 5173, which another project uses), paste the diff, press
-   Summarize. Gemini free tier: $0 (counted as about $0.01–0.05 against the $10 cap).
-5. You judge it as the reviewer (note: the PR's own author is a weaker test than a second person). Save the verdict in the form.
-6. Fill in "What happened" in PRODUCT.md. Decide: keep going / change the problem / change the product.
+## Still open from Milestone 1
+- A real reviewer verdict on a real summary (the riskiest assumption in PRODUCT.md).
 
-Gate to Milestone 2: the verdict is "yes" or "partly" and the reviewer says it would have saved time.
-
-## Next: Milestone 2 (plan only, not approved)
-Receive the "PR opened" webhook from a GitHub App on one test repo, verify its signature,
-fetch the changed files. Still post nothing. Needs: a GitHub App created by you, its secret
-and private key in backend env vars.
+## After that
+- Create the empty repo `Ra-vi-chilwal/pr-summary`, then push.
+- Go live on Render + Neon (only after you say "deploy").

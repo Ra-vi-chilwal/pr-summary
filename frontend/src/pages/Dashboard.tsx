@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ApiError,
   type PullRequest,
@@ -22,8 +22,19 @@ type Load<T> = { kind: "loading" } | { kind: "error"; message: string } | { kind
 
 const REVIEWS_PER_REPO = 50;
 
+const GITHUB_NOTICES: Record<string, { kind: "ok" | "error" | "warn"; text: string }> = {
+  connected: { kind: "ok", text: "GitHub is connected. Pick a repository below to see its pull requests." },
+  not_yours: {
+    kind: "error",
+    text: "That installation belongs to a GitHub account you can't access, so we didn't connect it.",
+  },
+  unconfigured: { kind: "warn", text: "The GitHub App isn't configured on this server yet. See the README." },
+};
+
 export function Dashboard() {
   const { me } = useSession();
+  const [params] = useSearchParams();
+  const notice = GITHUB_NOTICES[params.get("github") ?? ""];
   const [runs, setRuns] = useState<Load<RunList>>({ kind: "loading" });
 
   const loadRuns = useCallback(() => {
@@ -43,6 +54,12 @@ export function Dashboard() {
         </div>
         {runs.kind === "ok" && <Usage data={runs.data} />}
       </header>
+
+      {notice && (
+        <div className={`notice ${notice.kind}`} role="status" style={{ marginBottom: "var(--space-8)" }}>
+          <p>{notice.text}</p>
+        </div>
+      )}
 
       <section className="section" aria-labelledby="repos">
         <div className="section-head">
