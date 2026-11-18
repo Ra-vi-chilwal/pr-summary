@@ -3,8 +3,17 @@ import { Link } from "react-router-dom";
 import { type SummarizeResult, type Verdict, countFiles, saveVerdict, summarize } from "./api";
 import { useDiffStore } from "./diffStore";
 
+const PR_LINK = /^https?:\/\/github\.com\/[^/\s]+\/[^/\s]+\/pull\/\d+/;
+
+/** If someone pastes a PR link instead of the diff text, return the .diff link to open. */
+export function diffLinkFor(text: string): string | null {
+  const match = PR_LINK.exec(text.trim());
+  return match && !text.includes("diff --git") ? `${match[0]}.diff` : null;
+}
+
 type Phase =
   | { kind: "idle" }
+  | { kind: "link"; diffUrl: string }
   | { kind: "loading"; files: number }
   | { kind: "error" }
   | { kind: "result"; result: SummarizeResult };
@@ -16,6 +25,11 @@ export function TryDiff() {
   const diffStore = useDiffStore();
 
   async function run() {
+    const diffUrl = diffLinkFor(diff);
+    if (diffUrl) {
+      setPhase({ kind: "link", diffUrl });
+      return;
+    }
     setPhase({ kind: "loading", files: countFiles(diff) });
     try {
       const result = await summarize(diff, title);
@@ -35,7 +49,8 @@ export function TryDiff() {
           Try a diff <span className="tag">Dev only</span>
         </h1>
         <p className="meta">
-          Paste a diff from one of your own PRs (<code>gh pr diff 123</code>). We send the code
+          Open your PR on GitHub with <code>.diff</code> added to the end of its URL, copy all of
+          that text and paste it here. We send the code
           files to the AI for this summary only and don&apos;t store the diff. Nothing is posted to
           GitHub.
         </p>
@@ -65,6 +80,18 @@ export function TryDiff() {
 
       <section aria-live="polite">
         {phase.kind === "idle" && <p className="meta">Paste a diff to see the summary.</p>}
+        {phase.kind === "link" && (
+          <div className="notice">
+            <p>That&apos;s a link to the PR, not the diff. Nothing was sent.</p>
+            <p>
+              Open{" "}
+              <a href={phase.diffUrl} target="_blank" rel="noreferrer" className="mono">
+                {phase.diffUrl}
+              </a>
+              , press Ctrl+A then Ctrl+C, and paste that text here instead of the link.
+            </p>
+          </div>
+        )}
         {phase.kind === "loading" && <p>Reading {phase.files} files...</p>}
         {phase.kind === "error" && (
           <div className="notice error">

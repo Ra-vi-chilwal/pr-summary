@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockFetch, renderAt } from "./testUtils";
+import { diffLinkFor } from "./TryDiff";
 import { countFiles, type SummarizeResult } from "./api";
 
 const DIFF = "diff --git a/a.py b/a.py\n+x\ndiff --git a/b.py b/b.py\n+y\n";
@@ -109,5 +110,24 @@ describe("countFiles", () => {
   it("counts diff --git headers", () => {
     expect(countFiles(DIFF)).toBe(2);
     expect(countFiles("")).toBe(0);
+  });
+});
+
+describe("pasting a PR link instead of the diff", () => {
+  it("explains what to do and sends nothing", () => {
+    const fetchFn = mockFetch();
+    renderAt("/try");
+    pasteAndSubmit("https://github.com/Ra-vi-chilwal/trustRush-fastAPI/pull/1");
+    expect(screen.getByText("That's a link to the PR, not the diff. Nothing was sent.")).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: "https://github.com/Ra-vi-chilwal/trustRush-fastAPI/pull/1.diff" }),
+    ).toBeTruthy();
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("recognizes PR links but not real diffs", () => {
+    expect(diffLinkFor(" https://github.com/a/b/pull/12/files ")).toBe("https://github.com/a/b/pull/12.diff");
+    expect(diffLinkFor("diff --git a/x b/x")).toBeNull();
+    expect(diffLinkFor("https://example.com/a/b/pull/1")).toBeNull();
   });
 });
