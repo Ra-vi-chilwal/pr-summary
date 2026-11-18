@@ -1,11 +1,8 @@
 import httpx2
 import pytest
-from fastapi.testclient import TestClient
 
-from app.config import Settings
 from app.github_public import PRFetchError, PRLink, fetch_public_pr, parse_pr_link
-from app.main import create_app
-from tests.helpers import FakeSummarizer, make_diff, ok_response
+from tests.helpers import FakeSummarizer, make_client, make_diff, ok_response, signup
 
 LINK = PRLink("Ra-vi-chilwal", "trustRush-fastAPI", 1)
 
@@ -75,9 +72,8 @@ def test_network_error_gives_safe_message():
         fetch_public_pr(LINK, client=mock_client(handler))
 
 
-def app_client(fetcher, ai=None) -> TestClient:
-    settings = Settings(database_url="sqlite:///:memory:", enable_dev_tools=True, _env_file=None)
-    return TestClient(create_app(settings, summarizer=ai, pr_fetcher=fetcher))
+def app_client(fetcher, ai=None):
+    return make_client(ai, pr_fetcher=fetcher)
 
 
 def test_api_summarizes_a_pasted_pr_link():
@@ -88,6 +84,7 @@ def test_api_summarizes_a_pasted_pr_link():
         return make_diff("src/app.py"), "chnage in the branch"
 
     c = app_client(fetcher, FakeSummarizer([ok_response(["src/app.py"])]))
+    signup(c)
     body = c.post("/api/summaries", json={"diff": LINK.diff_url, "title": ""}).json()
     assert seen == [LINK]
     assert body["status"] == "done"
@@ -108,6 +105,7 @@ def test_api_fetch_failure_returns_message_and_creates_no_run():
         raise PRFetchError("Couldn't read this PR. Nothing was sent to the AI.")
 
     c = app_client(fetcher)
+    signup(c)
     r = c.post("/api/summaries", json={"diff": "https://github.com/a/b/pull/9"})
     assert r.status_code == 422
     assert r.json()["detail"] == "Couldn't read this PR. Nothing was sent to the AI."

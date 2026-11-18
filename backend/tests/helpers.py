@@ -50,3 +50,39 @@ def ok_response(paths: list[str], input_tokens: int = 1000, output_tokens: int =
 
 def retryable_error() -> AIError:
     return AIError("http_529", retryable=True)
+
+
+def make_client(summarizer=None, pr_fetcher=None, github=None, **overrides):
+    """A TestClient that behaves like our browser app: it holds the CSRF cookie and sends
+    it back as X-CSRF-Token. Cookies are non-Secure here because tests use http://."""
+    from fastapi.testclient import TestClient
+
+    from app.config import Settings
+    from app.main import create_app
+
+    values = {
+        "database_url": "sqlite:///:memory:",
+        "cookie_secure": False,
+        "secret_key": "test-secret",
+        "log_level": "WARNING",
+        "_env_file": None,
+    }
+    values.update(overrides)
+    kwargs = {"summarizer": summarizer}
+    if pr_fetcher is not None:
+        kwargs["pr_fetcher"] = pr_fetcher
+    if github is not None:
+        kwargs["github"] = github
+    client = TestClient(create_app(Settings(**values), **kwargs))
+    client.get("/api/health")
+    client.headers["X-CSRF-Token"] = client.cookies.get("prs_csrf", "")
+    return client
+
+
+GOOD_PASSWORD = "correct horse battery"
+
+
+def signup(client, email="ravi@example.com", name="Ravi", password=GOOD_PASSWORD):
+    r = client.post("/api/auth/signup", json={"name": name, "email": email, "password": password})
+    assert r.status_code == 201, r.json()
+    return r.json()["user"]

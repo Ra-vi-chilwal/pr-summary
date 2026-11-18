@@ -1,14 +1,8 @@
-from fastapi.testclient import TestClient
-
-from app.config import Settings
-from app.main import create_app
-from tests.helpers import FakeSummarizer, make_diff, ok_response
+from tests.helpers import FakeSummarizer, make_client, make_diff, ok_response, signup
 
 
-def client(summarizer=None, dev=True) -> TestClient:
-    settings = Settings(database_url="sqlite:///:memory:", enable_dev_tools=dev,
-                        anthropic_api_key=None, _env_file=None)  # fmt: skip
-    return TestClient(create_app(settings, summarizer=summarizer))
+def client(summarizer=None):
+    return make_client(summarizer)
 
 
 def test_health():
@@ -51,6 +45,7 @@ def test_without_key_run_fails_and_says_nothing_posted():
 
 def test_runs_list_and_detail():
     c = client(FakeSummarizer([ok_response(["src/app.py"])]))
+    signup(c)
     done = c.post(
         "/api/summaries", json={"diff": make_diff("src/app.py"), "title": "Add greeting"}
     ).json()

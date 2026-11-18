@@ -76,3 +76,34 @@ def fetch_public_pr(link: PRLink, client: httpx2.Client | None = None) -> tuple[
     finally:
         if own_client:
             client.close()
+
+
+def make_pr_fetcher(github, public_fetch=fetch_public_pr):
+    """Try a diff: use the GitHub App for repos the signed-in user connected (private too),
+    otherwise fall back to the public .diff URL."""
+    from app.github_app import GitHubError
+    from app.routes.auth import active_installations
+
+    def fetch(link: PRLink, user, db) -> tuple[str, str]:
+        if user is not None and github.settings.github_app_configured:
+            mine = {i.installation_id for i in active_installations(db, user.id)}
+            if mine:
+                try:
+                    inst = github.repo_installation_id(link.owner, link.repo)
+                    if inst in mine:
+                        pr = github.get_pull(inst, link.owner, link.repo, link.number)
+                        diff = github.get_pull_diff(inst, link.owner, link.repo, link.number)
+                        return diff, pr.get("title") or ""
+                except GitHubError as e:
+                    raise PRFetchError(f"{e.message} Nothing was sent to the AI.") from e
+        try:
+            return public_fetch(link)
+        except PRFetchError as e:
+            if user is not None and "private" in str(e):
+                raise PRFetchError(
+                    "Couldn't read this PR. If the repo is private, connect GitHub and give the "
+                    "app access to it. Nothing was sent to the AI."
+                ) from e
+            raise
+
+    return fetch
