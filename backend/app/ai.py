@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 import anthropic
-import httpx
+import httpx2
 from google import genai
 from google.genai import errors as genai_errors
 from google.genai import types as genai_types
@@ -129,7 +129,7 @@ class GeminiSummarizer:
             raise AIError(f"http_{e.code}", retryable=e.code == 429) from e
         except genai_errors.ServerError as e:  # 5xx
             raise AIError(f"http_{e.code}", retryable=True) from e
-        except httpx.HTTPError as e:
+        except httpx2.HTTPError as e:
             raise AIError("connection", retryable=True) from e
 
         meta = response.usage_metadata

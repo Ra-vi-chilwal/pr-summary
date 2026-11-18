@@ -3,7 +3,7 @@
 import json
 from types import SimpleNamespace
 
-import httpx
+import httpx2
 import pytest
 from google.genai import errors as genai_errors
 
@@ -75,7 +75,7 @@ def test_parses_json_and_sends_schema():
         (genai_errors.ClientError(400, {"error": {"message": "bad"}}), "http_400", False),
         (genai_errors.ClientError(403, {"error": {"message": "key"}}), "http_403", False),
         (genai_errors.ServerError(503, {"error": {"message": "busy"}}), "http_503", True),
-        (httpx.ConnectError("down"), "connection", True),
+        (httpx2.ConnectError("down"), "connection", True),
     ],
 )
 def test_errors_are_classified(raised, kind, retryable):

@@ -1,5 +1,31 @@
 # PROGRESS.md
 
+## 2026-11-18: Step 1, Gemini option + git
+
+### Decisions (from you)
+- Code goes to a new repo `Ra-vi-chilwal/pr-summary` (you create it empty). The prototype repo is untouched.
+- You rotate the exposed Gemini key and put the new one in `backend/.env` as `GEMINI_API_KEY`.
+- Locally, the app uses its own Postgres container (docker compose), not your `localhost:5433` DB.
+- You are the reviewer for the Milestone 1 accuracy check.
+
+### Done
+- `GeminiSummarizer` (google-genai 3.5.0, `gemini-3.8-flash`, JSON-schema output). `AI_PROVIDER=gemini|claude`
+  picks the AI; Gemini is the default. Cost is tracked at Gemini's paid price ($0.75 / $3.75 per 1M tokens), so the $10 cap stays meaningful.
+- docker compose reads `backend/.env`; `DATABASE_URL` is always overridden to the app's own DB.
+- `backend/.env.example` documents the settings. Local git repo with the first commit; no secrets
+  committed (checked: `.env` ignored, no key-like strings in staged files).
+
+### Checks run
+- Backend: 54 passed (12 new Gemini tests with a fake client), ruff clean; imports OK without dev packages.
+- docker: API healthy; reports `provider: gemini`, `gemini key set: False` (waiting for your key).
+
+### What broke
+- The first docker run crashed: `httpx` is only a test package; both AI SDKs use `httpx2`. Fixed and re-checked.
+
+### Waiting on you
+- Create the empty repo `Ra-vi-chilwal/pr-summary` (no README); then I push.
+- New key in `backend/.env` as `GEMINI_API_KEY=` (rename the old `API_KEY` line and revoke that key).
+
 ## 2026-11-18: App UI (shell, Get started, Dashboard, Review)
 
 ### Done
