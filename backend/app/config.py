@@ -7,6 +7,12 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     database_url: str = "sqlite:///./dev.db"
+    # Apply Alembic migrations when the app starts (Postgres only). Needed on Vercel, which
+    # has no start command; harmless elsewhere (a Postgres lock stops two starts racing).
+    auto_migrate: bool = True
+    # Finish webhook work before answering. On by default on Vercel (VERCEL=1), where work
+    # scheduled after the response can be frozen.
+    process_webhooks_inline: bool = False
 
     # ---- AI
     ai_provider: str = "gemini"  # "gemini" or "claude"

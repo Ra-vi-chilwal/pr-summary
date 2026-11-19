@@ -1,6 +1,6 @@
 """FastAPI app: middleware (request id, logging, CSRF), error handlers, routers.
 
-Run with: uvicorn app.main:create_app --factory
+Run with: uvicorn app.main:app   (or: uvicorn app.main:create_app --factory)
 """
 
 import re
@@ -22,6 +22,7 @@ from app.errors import FieldError
 from app.github_app import GitHub
 from app.github_public import PRLink, fetch_public_pr, make_pr_fetcher
 from app.logging_setup import configure_logging, get_logger
+from app.migrate import upgrade_to_head
 from app.ratelimit import RateLimiter
 from app.routes import auth as auth_routes
 from app.routes import github as github_routes
@@ -51,8 +52,10 @@ def create_app(
         )
 
     engine = make_engine(settings.database_url)
-    if settings.database_url.startswith("sqlite"):
+    if engine.dialect.name == "sqlite":
         Base.metadata.create_all(engine)  # tests & quick local runs; Postgres uses Alembic
+    elif settings.auto_migrate:
+        upgrade_to_head(engine)
 
     if summarizer is _UNSET:
         summarizer = make_summarizer(
@@ -145,3 +148,7 @@ def create_app(
     app.include_router(auth_routes.build_router(github))
     app.include_router(github_routes.build_router(github))
     return app
+
+
+# Vercel and `uvicorn app.main:app` import this module-level app.
+app = create_app()

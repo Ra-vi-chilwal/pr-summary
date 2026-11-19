@@ -67,3 +67,22 @@ def test_runs_list_and_detail():
     skipped = c.get(f"/api/runs/{listing['runs'][0]['id']}").json()
     assert skipped["result"] is None
     assert c.get("/api/runs/999").status_code == 404
+
+
+def test_module_level_app_exists_for_vercel():
+    from fastapi import FastAPI
+
+    import app.main
+
+    assert isinstance(app.main.app, FastAPI)
+
+
+def test_database_urls_from_neon_use_psycopg3():
+    from app.db import normalize_db_url
+
+    assert normalize_db_url("postgresql://u:p@ep-x.neon.tech/db?sslmode=require") == (
+        "postgresql+psycopg://u:p@ep-x.neon.tech/db?sslmode=require"
+    )
+    assert normalize_db_url("postgres://u:p@h/db").startswith("postgresql+psycopg://")
+    assert normalize_db_url("postgresql+psycopg://u:p@h/db") == "postgresql+psycopg://u:p@h/db"
+    assert normalize_db_url("sqlite:///:memory:") == "sqlite:///:memory:"

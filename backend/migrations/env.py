@@ -5,11 +5,11 @@ from sqlalchemy import engine_from_config, pool
 
 import app.models  # noqa: F401  (registers every table on Base.metadata)
 from app.config import Settings
-from app.db import Base
+from app.db import Base, normalize_db_url
 
 config = context.config
-if not config.get_main_option("sqlalchemy.url"):
-    config.set_main_option("sqlalchemy.url", Settings().database_url)
+url = config.get_main_option("sqlalchemy.url") or Settings().database_url
+config.set_main_option("sqlalchemy.url", normalize_db_url(url).replace("%", "%%"))
 target_metadata = Base.metadata
 
 

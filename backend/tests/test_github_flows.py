@@ -445,3 +445,12 @@ def test_draft_prs_are_skipped():
     payload["pull_request"]["draft"] = True
     assert webhook(c, "pull_request", payload).json()["skipped"] == "draft"
     assert gh.created == []
+
+
+def test_on_vercel_the_webhook_finishes_its_work_before_answering(monkeypatch):
+    monkeypatch.setenv("VERCEL", "1")
+    gh = FakeGitHub()
+    c = client_with(gh, FakeSummarizer([ok_response(["src/app.py"])]))
+    r = webhook(c, "pull_request", pr_payload())
+    assert r.status_code == 200 and r.json()["result"] == "posted"
+    assert gh.created == [1000]

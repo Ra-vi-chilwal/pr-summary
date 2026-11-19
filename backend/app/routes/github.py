@@ -1,9 +1,11 @@
 """GitHub App: install, repos, PRs, summarize from the dashboard, and the webhook."""
 
 import json
+import os
 import secrets
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -211,21 +213,27 @@ def build_router(github: GitHub) -> APIRouter:
                 head_sha=pr["head"]["sha"],
                 title=pr.get("title") or "",
             )
-            background.add_task(
-                _run_pr_event, factory, github, request.app.state.summarizer, settings, ev
-            )
+            args = (factory, github, request.app.state.summarizer, settings, ev)
+            if settings.process_webhooks_inline or os.getenv("VERCEL"):
+                # Serverless: finish before answering. GitHub may log a timeout for slow
+                # summaries, but the work completes and the comment is posted.
+                result = await run_in_threadpool(_run_pr_event, *args)
+                return JSONResponse({"ok": True, "result": result}, status_code=200)
+            background.add_task(_run_pr_event, *args)
             return JSONResponse({"ok": True, "queued": True}, status_code=202)
         return JSONResponse({"ok": True})
 
     return router
 
 
-def _run_pr_event(factory, github, summarizer, settings, ev: PREvent) -> None:
+def _run_pr_event(factory, github, summarizer, settings, ev: PREvent) -> str:
     try:
         result = handle_pull_request(factory, github, summarizer, settings, ev)
         log.info("pr_event_done", result=result, repo=ev.full_name, pr=ev.number)
+        return result
     except Exception:
         log.exception("pr_event_crashed", repo=ev.full_name, pr=ev.number)
+        return "crashed"
 
 
 def _on_installation(db: Session, github: GitHub, request: Request, payload: dict) -> None:

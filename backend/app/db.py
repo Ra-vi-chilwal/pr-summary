@@ -10,7 +10,17 @@ class Base(DeclarativeBase):
     pass
 
 
+def normalize_db_url(url: str) -> str:
+    """Neon/Render hand out postgres:// or postgresql:// URLs; SQLAlchemy would pick psycopg2
+    for those, which we don't install. We use psycopg 3."""
+    for prefix in ("postgres://", "postgresql://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg://" + url[len(prefix) :]
+    return url
+
+
 def make_engine(url: str) -> Engine:
+    url = normalize_db_url(url)
     if url.startswith("sqlite"):
         kwargs: dict = {"connect_args": {"check_same_thread": False}}
         if ":memory:" in url:

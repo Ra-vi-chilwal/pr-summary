@@ -163,3 +163,29 @@ listed (private ones carry a "Private" badge).
   GitHub connect and disconnect, repository changes, and summaries posted or failed.
 - **Frontend:** a small logger stays quiet in production, and a global error boundary shows a friendly
   page instead of a blank screen.
+
+---
+
+## Deploy on Vercel (frontend + backend in one project)
+
+`vercel.json` runs two services: `frontend/` (Vite) and `backend/` (FastAPI). `/api/*` goes to the
+backend and everything else to the frontend, so the login cookies stay on one domain.
+
+1. **Neon**: create a project just for this app and copy its connection string
+   (`postgresql://...?sslmode=require` works as-is). The app creates its tables when it starts.
+2. **Vercel → Project → Settings → Environment Variables** (Production). Never put these in git:
+   `DATABASE_URL`, `GEMINI_API_KEY`, `SECRET_KEY`, `APP_BASE_URL` (your Vercel URL, e.g.
+   `https://pr-summary.vercel.app`), and once the GitHub App exists: `GITHUB_APP_ID`,
+   `GITHUB_APP_SLUG`, `GITHUB_APP_PRIVATE_KEY`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`,
+   `GITHUB_WEBHOOK_SECRET`.
+3. **Settings → Functions → Max Duration**: set it as high as your plan allows (a summary can take
+   60–90 s when the AI is slow).
+4. Redeploy. In **Logs**, look for `migrations_applied`. If you see `migrations_failed`, run them once
+   from your machine:
+   `cd backend; $env:DATABASE_URL="<neon url>"; uv run alembic upgrade head`.
+5. GitHub App: Callback URL `https://<your-app>.vercel.app/api/auth/github/callback`, Webhook URL
+   `https://<your-app>.vercel.app/api/github/webhook`. No smee or ngrok is needed in production.
+
+On Vercel the webhook finishes the summary before it answers (`VERCEL=1` switches this on). GitHub
+may show a timeout on slow deliveries, but the comment still gets posted. Rate limits and the GitHub
+token cache are kept in memory per running instance, so they're per-instance on serverless.
