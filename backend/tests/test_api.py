@@ -18,6 +18,21 @@ def test_health_db_reports_state_without_secrets():
     assert "sqlite://" not in r.text  # never the database URL
 
 
+def test_db_error_reason_labels_never_echo_details():
+    from app.main import _db_error_reason
+
+    assert _db_error_reason(
+        'connection to server at "localhost" (::1), port 5433 failed: Connection refused'
+    ) == "points_at_localhost"
+    assert _db_error_reason(
+        'FATAL: password authentication failed for user "neondb_owner"'
+    ) == "wrong_user_or_password"
+    assert _db_error_reason(
+        'could not translate host name "ep-x.neon.tech" to address'
+    ) == "host_not_found"
+    assert _db_error_reason("something odd") == "other"
+
+
 def test_try_a_diff_is_public():
     r = client().post("/api/summaries", json={"diff": make_diff("a.py")})
     assert r.status_code == 200

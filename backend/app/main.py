@@ -37,6 +37,29 @@ _REQUEST_ID = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
 _CSRF_EXEMPT = {"/api/github/webhook"}
 _UNSET = object()
 
+# Map driver error text to a fixed label, so /api/health/db never echoes hosts or users.
+_DB_REASONS = [
+    ("password authentication failed", "wrong_user_or_password"),
+    ("does not exist", "database_or_user_missing"),
+    ("could not translate host name", "host_not_found"),
+    ("name or service not known", "host_not_found"),
+    ("connection refused", "connection_refused"),
+    ("timeout", "timeout"),
+    ("timed out", "timeout"),
+    ("ssl", "ssl_problem"),
+    ("endpoint", "neon_endpoint_problem"),
+    ("invalid dsn", "url_malformed"),
+    ("missing \"=\"", "url_malformed"),
+    ("invalid connection option", "url_malformed"),
+]
+
+
+def _db_error_reason(message: str) -> str:
+    low = message.lower()
+    if "localhost" in low or "127.0.0.1" in low:
+        return "points_at_localhost"
+    return next((label for needle, label in _DB_REASONS if needle in low), "other")
+
 
 def create_app(
     settings: Settings | None = None,
@@ -161,7 +184,11 @@ def create_app(
                     else None
                 )
         except Exception as exc:  # noqa: BLE001
-            out.update(reachable=out.get("reachable", False), error=type(exc).__name__)
+            out.update(
+                reachable=out.get("reachable", False),
+                error=type(exc).__name__,
+                reason=_db_error_reason(str(exc)),
+            )
         ok = bool(out.get("reachable") and out.get("tables_ok"))
         return JSONResponse({"ok": ok, **out}, status_code=200 if ok else 503)
 
