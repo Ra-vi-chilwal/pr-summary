@@ -13,6 +13,7 @@ import structlog
 from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from sqlalchemy import inspect, text
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.ai import make_summarizer
@@ -143,6 +144,26 @@ def create_app(
     @app.get("/api/health")
     def health() -> dict:
         return {"ok": True}
+
+    @app.get("/api/health/db")
+    def health_db() -> JSONResponse:
+        """Database state for debugging deploys. Never includes the URL or error messages
+        (they can hold the host or password), only the error's class name."""
+        out: dict = {"kind": engine.dialect.name, "auto_migrate": settings.auto_migrate}
+        try:
+            with engine.connect() as conn:
+                out["reachable"] = True
+                names = set(inspect(conn).get_table_names())
+                out["tables_ok"] = {"users", "sessions", "runs", "audit_log"} <= names
+                out["revision"] = (
+                    conn.execute(text("SELECT version_num FROM alembic_version")).scalar()
+                    if "alembic_version" in names
+                    else None
+                )
+        except Exception as exc:  # noqa: BLE001
+            out.update(reachable=out.get("reachable", False), error=type(exc).__name__)
+        ok = bool(out.get("reachable") and out.get("tables_ok"))
+        return JSONResponse({"ok": ok, **out}, status_code=200 if ok else 503)
 
     app.include_router(summary_routes.build_router(make_pr_fetcher(github, pr_fetcher)))
     app.include_router(auth_routes.build_router(github))

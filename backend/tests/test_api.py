@@ -9,6 +9,15 @@ def test_health():
     assert client().get("/api/health").json() == {"ok": True}
 
 
+def test_health_db_reports_state_without_secrets():
+    r = client().get("/api/health/db")
+    body = r.json()
+    assert r.status_code == 200
+    assert body["ok"] is True and body["reachable"] is True and body["tables_ok"] is True
+    assert body["kind"] == "sqlite"
+    assert "sqlite://" not in r.text  # never the database URL
+
+
 def test_try_a_diff_is_public():
     r = client().post("/api/summaries", json={"diff": make_diff("a.py")})
     assert r.status_code == 200
