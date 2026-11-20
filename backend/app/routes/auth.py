@@ -246,6 +246,8 @@ def build_router(github: GitHub) -> APIRouter:
             log.warning("github_callback_rejected", reason="state" if code else "no_code")
             return _done(request, "/login?error=github_failed")
         next_path = safe_next(saved.get("next"), "/dashboard")
+        # Only trusted when the state matched (checked above for every non-install callback).
+        linking = not installing and saved.get("purpose") == "link"
 
         try:
             user_token = github.exchange_code(code, callback_url(request))
@@ -260,9 +262,13 @@ def build_router(github: GitHub) -> APIRouter:
                     return _done(request, "/dashboard?github=not_yours")
                 _link_installation(db, request, github, user, installation_id)
                 next_path = "/dashboard?github=connected"
+            elif linking:
+                result = _link_visible_installations(db, request, github, user, user_token)
+                next_path = f"/dashboard?github={result}"
         except GitHubError as e:
-            log.warning("github_callback_failed", kind=e.kind)
-            return _done(request, "/login?error=github_failed")
+            log.warning("github_callback_failed", kind=e.kind, linking=linking)
+            failed = "/dashboard?github=link_failed" if linking else "/login?error=github_failed"
+            return _done(request, failed)
 
         resp = _done(request, next_path)
         if current is None or current.id != user.id:
@@ -344,6 +350,34 @@ def _link_installation(
         db, "github_connected", user_id=user.id, request=request,
         installation_id=installation_id, account=inst.account_login,
     )  # fmt: skip
+
+
+def _link_visible_installations(
+    db: Session, request: Request, github: GitHub, user: User, user_token: str
+) -> str:
+    """Link every installation of this app that GitHub shows this person, unless another
+    account here already owns it. Returns the dashboard notice key."""
+    visible = github.user_installation_ids(user_token)
+    if not visible:
+        log.info("github_link_none_found")
+        return "none_found"
+    owners = {
+        row.installation_id: row.user_id
+        for row in db.scalars(
+            select(GitHubInstallation).where(
+                GitHubInstallation.installation_id.in_(visible),
+                GitHubInstallation.deleted_at.is_(None),
+            )
+        )
+    }
+    linked = 0
+    for inst_id in sorted(visible):
+        if owners.get(inst_id) not in (None, user.id):
+            continue  # claimed by a different account here; never take it over
+        _link_installation(db, request, github, user, inst_id)
+        linked += 1
+    log.info("github_link_done", visible=len(visible), linked=linked)
+    return "connected" if linked else "linked_elsewhere"
 
 
 def login_redirect_url(error: str) -> str:

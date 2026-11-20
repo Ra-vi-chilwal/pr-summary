@@ -61,6 +61,11 @@ export function GetStarted() {
               Try a public PR first →
             </Link>
           </div>
+          {me.user && !connected && me.github_app_configured && (
+            <p className="small muted">
+              Already installed the app on GitHub? <a href="/api/github/link">Link it</a>
+            </p>
+          )}
           {me.user && !connected && !me.github_app_configured && (
             <p className="small muted">
               The GitHub App isn&apos;t configured on this server yet. See “Create the GitHub App” in

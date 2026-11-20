@@ -1,5 +1,38 @@
 # PROGRESS.md
 
+## 2026-11-20 (later): GitHub connection fixes
+
+### What broke (found on the live site)
+1. Connect GitHub was greyed out on `pr-summary-gaqic5mgp-rvi5.vercel.app`: that is a Preview
+   deployment without the GitHub variables. Production (`pr-summary-six`) was fine.
+2. "redirect_uri is not associated": `APP_BASE_URL` was missing in Vercel, so the app sent GitHub
+   `http://localhost:5180/...`. Fixed by you in Vercel; checked live, it now sends the Vercel URL.
+3. GitHub 404 on install: `GITHUB_APP_SLUG` was set to a URL fragment instead of `pr-summary-ravi`.
+4. The app got installed on GitHub during those errors, so GitHub never sent the user back and the
+   install was never linked. Clicking Connect GitHub again only opened GitHub's settings page.
+
+### Done (not deployed)
+- **Link an existing install**: new `GET /api/github/link`. GitHub sign-in shows which installs of
+  this app the user can see; the callback links the ones no other account here owns. It never takes
+  an install from another account.
+- Dashboard: "Already installed the app on GitHub, but it isn't showing here? Link it" under Connect
+  GitHub (also on Get started). New clear messages: `none_found`, `linked_elsewhere`, `link_failed`.
+
+### Checks run (real results)
+- Backend: **168 passed** (7 new link tests), ruff check clean. `ruff format --check` flags
+  `app/main.py` and `tests/test_api.py`, which were unformatted before this change (not touched).
+- Frontend: **63 passed** (1 new), lint clean.
+- Screenshots (fake API in the screenshot browser only): Dashboard and Get started at 1280px, and at
+  780px phone layout. A true 390px capture wasn't possible: headless Chrome and Edge on Windows won't
+  go below ~500px wide.
+- `docker compose up --build`: app runs (health ok, `/api/github/link` gives 401 signed out,
+  dashboard loads). Two local fixes were needed first: `backend/.env` line 5 started with `//`
+  (now `#`, a comment), and a stale Docker cache had an empty `alembic.ini` (rebuilt `--no-cache`).
+- Not run: the real GitHub link flow (needs your login on the live site).
+
+### Next
+- Say "deploy", then use "Link it" on the live Dashboard.
+
 ## 2026-11-20: Live on Vercel + Neon, landing page
 
 ### Done

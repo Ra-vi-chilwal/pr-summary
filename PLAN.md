@@ -2,17 +2,14 @@
 
 What we build next. One small feature at a time; wait for "ok" before code.
 
-## Next: connect the real GitHub App (needs you)
-Production: Callback `https://pr-summary-six.vercel.app/api/auth/github/callback`, webhook
-`https://pr-summary-six.vercel.app/api/github/webhook`, then add the 6 `GITHUB_*` vars in Vercel and redeploy.
+## Next: ship "Link an existing install" (built, waiting for "deploy")
+1. You say "deploy": push to `main`, Vercel builds Production.
+2. On https://pr-summary-six.vercel.app (signed in): Dashboard → "Already installed the app on
+   GitHub? Link it" → approve on GitHub → back on the Dashboard with your repos listed.
+3. Open a repo → its open PRs → Summarize. Then open or update a PR to check the automatic comment.
 
-1. Secret key: `SECRET_KEY` or `JWT_SECRET_KEY` in `backend/.env`.
-2. Create the GitHub App: README → "Create the GitHub App". Put its 6 values in `backend/.env`.
-3. `docker compose up -d --force-recreate api`.
-4. Sign in at http://localhost:5180, click "Connect GitHub", pick trustRush-fastAPI.
-5. Dashboard → the repo → PR #1 → Summarize. (Needs Gemini to be up again.)
-6. For automatic comments: pick smee.io or ngrok (outside service: your call), set the webhook URL,
-   push a commit to the PR, and check that one comment appears and is edited on the next push.
+Vercel settings that must stay as they are now: `APP_BASE_URL=https://pr-summary-six.vercel.app`,
+`GITHUB_APP_SLUG=pr-summary-ravi` (just the name, not a URL).
 
 ## Still open from Milestone 1
 - A real reviewer verdict on a real summary (the riskiest assumption in PRODUCT.md).

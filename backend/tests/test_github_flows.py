@@ -266,6 +266,88 @@ def test_install_links_and_shows_in_me():
         assert [a.event for a in s.scalars(select(AuditLog))][-1] == "github_connected"
 
 
+def start_link(c):
+    """Click "Link it" and come back from GitHub sign-in with the matching state."""
+    start = c.get("/api/github/link", follow_redirects=False)
+    assert start.headers["location"].startswith("https://github.com/login/oauth/authorize")
+    state = start.headers["location"].split("state=")[1]
+    return c.get(
+        "/api/auth/github/callback",
+        params={"code": "good-code", "state": state},
+        follow_redirects=False,
+    )
+
+
+def test_link_existing_installation_connects_it():
+    # Installed on GitHub earlier, but GitHub never sent the user back (e.g. bad config).
+    c = client_with(FakeGitHub())
+    signup(c)
+    r = start_link(c)
+    assert r.headers["location"] == "/dashboard?github=connected"
+    me = c.get("/api/auth/me").json()
+    assert [i["installation_id"] for i in me["installations"]] == [42]
+    assert me["user"]["github_login"] == "ravi"
+
+
+def test_link_also_claims_an_install_the_webhook_saved_without_an_owner():
+    c = client_with(FakeGitHub())
+    signup(c)
+    webhook(c, "installation", {"action": "created", "sender": {"id": 999},
+                                "installation": {"id": 42, "account": {"login": "Ra-vi-chilwal"}}})  # fmt: skip
+    with db(c) as s:
+        assert s.scalar(select(GitHubInstallation)).user_id is None
+    assert start_link(c).headers["location"] == "/dashboard?github=connected"
+    assert len(c.get("/api/auth/me").json()["installations"]) == 1
+
+
+def test_link_with_nothing_installed_says_so():
+    c = client_with(FakeGitHub(visible_installations=set()))
+    signup(c)
+    assert start_link(c).headers["location"] == "/dashboard?github=none_found"
+    assert c.get("/api/auth/me").json()["installations"] == []
+
+
+def test_link_never_takes_an_installation_from_another_account():
+    gh = FakeGitHub()
+    c = client_with(gh)
+    link_installation(c, gh)  # first account owns installation 42
+    c.post("/api/auth/logout")
+    gh.gh_user = {"id": 777, "login": "someone", "name": "Someone"}
+    gh.emails = []
+    signup(c, email="other@example.com")
+    assert start_link(c).headers["location"] == "/dashboard?github=linked_elsewhere"
+    assert c.get("/api/auth/me").json()["installations"] == []
+
+
+def test_link_with_a_forged_state_links_nothing():
+    c = client_with(FakeGitHub())
+    signup(c)
+    c.get("/api/github/link", follow_redirects=False)
+    r = c.get("/api/auth/github/callback", params={"code": "good-code", "state": "forged"},
+              follow_redirects=False)  # fmt: skip
+    assert r.headers["location"] == "/login?error=github_failed"
+    assert c.get("/api/auth/me").json()["installations"] == []
+
+
+def test_link_failure_on_github_goes_back_to_the_dashboard():
+    c = client_with(FakeGitHub())
+    signup(c)
+    start = c.get("/api/github/link", follow_redirects=False)
+    state = start.headers["location"].split("state=")[1]
+    r = c.get("/api/auth/github/callback", params={"code": "bad-code", "state": state},
+              follow_redirects=False)  # fmt: skip
+    assert r.headers["location"] == "/dashboard?github=link_failed"
+
+
+def test_link_needs_sign_in_and_configuration():
+    c = client_with(FakeGitHub())
+    assert c.get("/api/github/link", follow_redirects=False).status_code == 401
+    c2 = client_with(FakeGitHub(), github_client_secret=None)
+    signup(c2)
+    r = c2.get("/api/github/link", follow_redirects=False)
+    assert r.headers["location"] == "/dashboard?github=unconfigured"
+
+
 # ------------------------------------------------------------------ repos, PRs, summarize
 def test_repos_prs_and_summarize_from_the_dashboard():
     c = client_with(FakeGitHub(), FakeSummarizer([ok_response(["src/app.py"])]))

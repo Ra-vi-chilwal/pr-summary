@@ -82,6 +82,20 @@ def build_router(github: GitHub) -> APIRouter:
         set_state_cookie(resp, request, state, "install", "/dashboard")
         return resp
 
+    @router.get("/link")
+    def link(request: Request, user: User = Depends(current_user)) -> RedirectResponse:
+        """For an app already installed on GitHub (e.g. installed while the app was misconfigured,
+        so GitHub never sent the user back). GitHub sign-in tells us which installations this
+        person can see; the callback links the ones nobody else has claimed."""
+        settings = request.app.state.settings
+        if not (settings.github_app_configured and settings.github_login_configured):
+            return RedirectResponse("/dashboard?github=unconfigured", status_code=303)
+        state = secrets.token_urlsafe(24)
+        callback = f"{settings.app_base_url}/api/auth/github/callback"
+        resp = RedirectResponse(github.authorize_url(state, callback), status_code=303)
+        set_state_cookie(resp, request, state, "link", "/dashboard")
+        return resp
+
     @router.get("/repos")
     def repos(db: Session = Depends(get_session), user: User = Depends(current_user)) -> dict:
         out: list[RepoOut] = []

@@ -30,6 +30,18 @@ const GITHUB_NOTICES: Record<string, { kind: "ok" | "error" | "warn"; text: stri
     text: "That installation belongs to a GitHub account you can't access, so we didn't connect it.",
   },
   unconfigured: { kind: "warn", text: "The GitHub App isn't configured on this server yet. See the README." },
+  none_found: {
+    kind: "warn",
+    text: "GitHub doesn't show the PR Summary app installed on any account you can access. Use Connect GitHub to install it.",
+  },
+  linked_elsewhere: {
+    kind: "error",
+    text: "The app is installed, but that installation is already connected to a different PR Summary account. Sign in with that account, or uninstall the app on GitHub and connect again.",
+  },
+  link_failed: {
+    kind: "error",
+    text: "GitHub sign-in didn't finish, so nothing was linked. Try “Link it” again.",
+  },
 };
 
 export function Dashboard() {
@@ -183,9 +195,15 @@ function ConnectEmpty({ configured }: { configured: boolean }) {
         read pull requests and write one comment; it can&apos;t approve, merge or push.
       </p>
       {configured ? (
-        <a className="btn btn-primary" href="/api/github/install">
-          Connect GitHub
-        </a>
+        <>
+          <a className="btn btn-primary" href="/api/github/install">
+            Connect GitHub
+          </a>
+          <p className="small muted">
+            Already installed the app on GitHub, but it isn&apos;t showing here?{" "}
+            <a href="/api/github/link">Link it</a>
+          </p>
+        </>
       ) : (
         <p className="small muted">
           The GitHub App isn&apos;t configured on this server yet. Follow “Create the GitHub App” in

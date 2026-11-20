@@ -155,7 +155,14 @@ describe("Dashboard", () => {
     renderAt("/dashboard");
     await screen.findByText("Connect GitHub to summarize your pull requests");
     expect(screen.getByRole("link", { name: "Connect GitHub" }).getAttribute("href")).toBe("/api/github/install");
+    expect(screen.getByRole("link", { name: "Link it" }).getAttribute("href")).toBe("/api/github/link");
     expect(await screen.findByText("No summaries yet")).toBeTruthy();
+  });
+
+  it("explains why linking an existing install didn't work", async () => {
+    mockApi({ "GET /api/auth/me": SIGNED_IN, "GET /api/runs": { ...LIST, runs: [] } });
+    renderAt("/dashboard?github=linked_elsewhere");
+    expect(await screen.findByText(/already connected to a different PR Summary account/)).toBeTruthy();
   });
 
   it("lists repos with a Private badge, then open PRs, then summarizes one", async () => {
