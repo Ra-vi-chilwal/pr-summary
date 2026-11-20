@@ -1,5 +1,34 @@
 # PROGRESS.md
 
+## 2026-11-20: Live on Vercel + Neon, landing page
+
+### Done
+1. **Vercel deploy fixed**: module-level `app`, Neon `postgresql://` URLs accepted, migrations run on
+   start (advisory lock), webhooks finish before answering on Vercel.
+2. **`/api/health/db`**: says if the database is reachable, with a safe reason label (never the URL).
+   It found the cause of the signup 500: Vercel's `DATABASE_URL` pointed at localhost. Fixed by you
+   (Neon link in Vercel).
+3. **Direct links**: `/login`, `/signup`, `/dashboard` etc. no longer 404 on Vercel. Review links are
+   now `/review?run=ID`; `/review/ID` still works inside the app.
+4. **`JWT_SECRET_KEY`** is accepted as the secret key name too.
+5. **Landing page at `/`**: hero, product preview with Comment / Dashboard / Review tabs (made-up
+   sample data, labelled), how it works (4 cards), what the summary tells you, paste a PR link
+   (opens Try a diff filled in), trust notes, footer. Instrument Serif (self-hosted) for headlines.
+   Signed-in visitors go to the Dashboard. The old Get started page moved to `/get-started`.
+
+### Checks run (real results)
+- Live site: health/db ok (revision 0002); signup, me, logout, login all worked; one real summary
+  via Try a diff (took ~2m45s).
+- Backend: **161 passed**, ruff clean. Frontend: **62 passed**, lint and types clean.
+- Landing screenshots at 1440px and 390px: no sideways scroll.
+
+### Left in the live DB
+- Test user `deploy-check-...@example.com` (user #1) and run #1. Delete on request.
+
+### Broke / watch
+- Summaries can be slow on Vercel (~2-3 min): raise Function Max Duration if they time out.
+- Hosting is Vercel, but AGENTS.md still says Render: please update AGENTS.md.
+
 ## 2026-11-18: Redesign, accounts, GitHub App, logging
 
 ### Done (5 commits)

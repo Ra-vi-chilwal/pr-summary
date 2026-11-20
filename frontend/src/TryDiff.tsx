@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   ApiError,
   type SummarizeResult,
@@ -24,7 +24,9 @@ type Phase =
   | { kind: "result"; result: SummarizeResult };
 
 export function TryDiff() {
-  const [diff, setDiff] = useState("");
+  // The landing page sends a pasted PR link as ?pr=...
+  const [params] = useSearchParams();
+  const [diff, setDiff] = useState(() => params.get("pr") ?? "");
   const [title, setTitle] = useState("");
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const diffStore = useDiffStore();

@@ -39,7 +39,7 @@ export function Shell() {
           <Connection />
         </div>
         <nav className="nav">
-          <NavLink to="/" end className="nav-link">
+          <NavLink to="/get-started" className="nav-link">
             Get started
           </NavLink>
           <NavLink to="/dashboard" className="nav-link">

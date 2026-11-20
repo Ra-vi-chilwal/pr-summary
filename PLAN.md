@@ -3,7 +3,10 @@
 What we build next. One small feature at a time; wait for "ok" before code.
 
 ## Next: connect the real GitHub App (needs you)
-1. Add `SECRET_KEY` to `backend/.env` (command in `backend/.env.example`).
+Production: Callback `https://pr-summary-six.vercel.app/api/auth/github/callback`, webhook
+`https://pr-summary-six.vercel.app/api/github/webhook`, then add the 6 `GITHUB_*` vars in Vercel and redeploy.
+
+1. Secret key: `SECRET_KEY` or `JWT_SECRET_KEY` in `backend/.env`.
 2. Create the GitHub App: README → "Create the GitHub App". Put its 6 values in `backend/.env`.
 3. `docker compose up -d --force-recreate api`.
 4. Sign in at http://localhost:5180, click "Connect GitHub", pick trustRush-fastAPI.
@@ -15,5 +18,5 @@ What we build next. One small feature at a time; wait for "ok" before code.
 - A real reviewer verdict on a real summary (the riskiest assumption in PRODUCT.md).
 
 ## After that
-- Create the empty repo `Ra-vi-chilwal/pr-summary`, then push.
-- Go live on Render + Neon (only after you say "deploy").
+- Update AGENTS.md: hosting is Vercel (not Render).
+- Real Privacy / Terms pages before sharing the site widely.

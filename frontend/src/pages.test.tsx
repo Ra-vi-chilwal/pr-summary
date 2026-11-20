@@ -60,10 +60,56 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+describe("Landing page", () => {
+  it("shows the headline, sign-in links and the sample-data note when signed out", async () => {
+    mockApi({ "GET /api/auth/me": SIGNED_OUT });
+    renderAt("/");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
+      "Know what a pull request changed before you open the diff.",
+    );
+    expect(screen.getAllByRole("link", { name: "Sign in" })[0].getAttribute("href")).toBe("/login");
+    expect(screen.getAllByRole("link", { name: "Try for free" })[0].getAttribute("href")).toBe("/signup");
+    expect(screen.getByText("Sample data: a made-up repo, people and code.")).toBeTruthy();
+    expect(screen.getByText("Install it on the repos you pick")).toBeTruthy();
+  });
+
+  it("switches the preview tabs", () => {
+    mockApi({ "GET /api/auth/me": SIGNED_OUT });
+    renderAt("/");
+    expect(screen.getByText("Written by AI. It can be wrong.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: "Dashboard" }));
+    expect(screen.getByRole("tab", { name: "Dashboard" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByText("Failed, nothing posted")).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: "Review" }));
+    expect(screen.getByText("Check this first")).toBeTruthy();
+  });
+
+  it("only accepts a PR link in the paste box, then opens Try a diff with it", async () => {
+    mockApi({ "GET /api/auth/me": SIGNED_OUT });
+    renderAt("/");
+    const input = screen.getByLabelText("Pull request link");
+    const button = screen.getByRole("button", { name: "Summarize this PR" }) as HTMLButtonElement;
+    fireEvent.change(input, { target: { value: "not a link" } });
+    expect(button.disabled).toBe(true);
+    expect(screen.getByText(/doesn't look like a pull request link/)).toBeTruthy();
+    fireEvent.change(input, { target: { value: "https://github.com/octo/app/pull/9" } });
+    fireEvent.click(button);
+    expect(((await screen.findByLabelText("PR link or diff")) as HTMLTextAreaElement).value).toBe(
+      "https://github.com/octo/app/pull/9",
+    );
+  });
+
+  it("sends signed-in visitors to their dashboard", async () => {
+    mockApi({ "GET /api/auth/me": SIGNED_IN, "GET /api/runs": LIST });
+    renderAt("/");
+    expect(await screen.findByRole("heading", { name: "Dashboard" })).toBeTruthy();
+  });
+});
+
 describe("Get started and the sidebar", () => {
   it("shows the headline, steps and a sign-in link when signed out", async () => {
     mockApi({ "GET /api/auth/me": SIGNED_OUT });
-    renderAt("/");
+    renderAt("/get-started");
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
       "Know what a pull request does before you open the diff.",
     );
@@ -75,7 +121,7 @@ describe("Get started and the sidebar", () => {
 
   it("shows the account, connection and log out when signed in and connected", async () => {
     mockApi({ "GET /api/auth/me": CONNECTED });
-    renderAt("/");
+    renderAt("/get-started");
     expect(await screen.findByText("Ravi Chilwal")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Log out" })).toBeTruthy();
     expect(screen.getByText("2 repositories connected")).toBeTruthy();

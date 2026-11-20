@@ -42,6 +42,7 @@
 
   /* ---- Type ---- */
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Instrument Serif", ui-serif, Georgia, "Times New Roman", serif; /* landing headlines only */
   --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   --text-xs: 0.75rem; /* 12 */
@@ -97,6 +98,8 @@
   --sidebar-width: 252px;
   --filelist-width: 288px;
   --content-max: 1080px;
+  --landing-max: 1180px; /* landing preview and cards */
+  --landing-narrow: 640px; /* landing reading sections */
   --prose-max: 68ch;
   --control-height: 2.25rem;
   --control-height-lg: 2.625rem;

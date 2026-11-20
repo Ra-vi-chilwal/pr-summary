@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import "@fontsource-variable/geist";
 import "@fontsource-variable/jetbrains-mono";
+import "@fontsource/instrument-serif/400.css";
 import "./design/tokens.css";
 import "./styles.css";
 import { AppRoutes } from "./AppRoutes";

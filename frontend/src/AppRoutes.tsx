@@ -4,6 +4,7 @@ import { TryDiff } from "./TryDiff";
 import { ForgotPassword, Login, Signup } from "./pages/Auth";
 import { Dashboard } from "./pages/Dashboard";
 import { GetStarted } from "./pages/GetStarted";
+import { Landing } from "./pages/Landing";
 import { Review } from "./pages/Review";
 import { RequireAuth, useSession } from "./session";
 
@@ -38,8 +39,9 @@ export function AppRoutes() {
           </GuestOnly>
         }
       />
+      <Route path="/" element={<Landing />} />
       <Route element={<Shell />}>
-        <Route path="/" element={<GetStarted />} />
+        <Route path="/get-started" element={<GetStarted />} />
         <Route
           path="/dashboard"
           element={
@@ -61,7 +63,7 @@ export function AppRoutes() {
         ))}
         <Route path="/try" element={<TryDiff />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="*" element={<GetStarted />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
   );

@@ -7,7 +7,7 @@ import { defineConfig, type Plugin } from "vite";
 // Static hosts (Vercel) only serve files that exist, so opening /login directly gave a 404.
 // Copy index.html to each page's folder, and to 404.html as the fallback for /review/<id>
 // and anything else. React Router then renders the right page.
-export const SPA_PAGES = ["login", "signup", "dashboard", "try", "forgot-password", "review"];
+export const SPA_PAGES = ["login", "signup", "dashboard", "try", "forgot-password", "review", "get-started"];
 
 function spaFallback(): Plugin {
   let outDir = "dist";
