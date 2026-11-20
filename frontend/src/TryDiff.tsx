@@ -15,6 +15,7 @@ import { Skeleton } from "./components/Skeleton";
 import { useToast } from "./components/Toast";
 import { useDiffStore } from "./diffStore";
 import { useSession } from "./session";
+import { reviewPath } from "./pages/Review";
 
 type Phase =
   | { kind: "idle" }
@@ -180,11 +181,11 @@ function Result({ result }: { result: SummarizeResult }) {
         </div>
         <div className="actions">
           {me.user ? (
-            <Link className="link-arrow" to={`/review/${result.run_id}`}>
+            <Link className="link-arrow" to={reviewPath(result.run_id)}>
               Open full summary with the diff →
             </Link>
           ) : (
-            <Link className="link-arrow" to={`/login?next=${encodeURIComponent(`/review/${result.run_id}`)}`}>
+            <Link className="link-arrow" to={`/login?next=${encodeURIComponent(reviewPath(result.run_id))}`}>
               Sign in to keep this summary →
             </Link>
           )}

@@ -53,7 +53,7 @@ describe("Try a diff", () => {
     renderAt("/try");
     pasteAndSubmit();
     const link = await screen.findByRole("link", { name: /Sign in to keep this summary/ });
-    expect(link.getAttribute("href")).toBe("/login?next=%2Freview%2F7");
+    expect(link.getAttribute("href")).toBe("/login?next=%2Freview%3Frun%3D7");
   });
 
   it("links signed-in users to the full summary", async () => {
@@ -61,7 +61,7 @@ describe("Try a diff", () => {
     renderAt("/try");
     pasteAndSubmit();
     const link = await screen.findByRole("link", { name: /Open full summary/ });
-    expect(link.getAttribute("href")).toBe("/review/7");
+    expect(link.getAttribute("href")).toBe("/review?run=7");
   });
 
   it("shows 'Failed, nothing posted.' when the run fails", async () => {

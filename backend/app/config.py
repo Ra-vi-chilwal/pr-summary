@@ -1,3 +1,4 @@
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -30,7 +31,8 @@ class Settings(BaseSettings):
     app_base_url: str = "http://localhost:5180"  # where the browser sees the app
     # Signs short-lived cookies (OAuth state, anonymous run claims). Set SECRET_KEY in
     # production; if empty, a random one is made at startup (those cookies reset on restart).
-    secret_key: str = ""
+    # JWT_SECRET_KEY is accepted too, since that is a common name for it.
+    secret_key: str = Field("", validation_alias=AliasChoices("secret_key", "jwt_secret_key"))
     cookie_secure: bool = True  # browsers accept Secure cookies on http://localhost too
     session_days: int = 14
     # Login/signup attempts per IP per 10 minutes; summaries per IP per hour when signed out.

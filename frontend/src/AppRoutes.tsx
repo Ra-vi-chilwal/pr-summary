@@ -48,14 +48,17 @@ export function AppRoutes() {
             </RequireAuth>
           }
         />
-        <Route
-          path="/review/:runId"
-          element={
-            <RequireAuth>
-              <Review />
-            </RequireAuth>
-          }
-        />
+        {["/review", "/review/:runId"].map((path) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              <RequireAuth>
+                <Review />
+              </RequireAuth>
+            }
+          />
+        ))}
         <Route path="/try" element={<TryDiff />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="*" element={<GetStarted />} />

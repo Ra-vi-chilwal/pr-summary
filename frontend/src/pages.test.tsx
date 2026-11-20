@@ -101,7 +101,7 @@ describe("Dashboard", () => {
     expect(screen.getByText("$0.12")).toBeTruthy();
     expect(screen.getByText("Failed, nothing posted")).toBeTruthy();
     expect(screen.getByText("Untitled diff")).toBeTruthy();
-    expect(screen.getByRole("link", { name: /View summary: Add retry/ }).getAttribute("href")).toBe("/review/5");
+    expect(screen.getByRole("link", { name: /View summary: Add retry/ }).getAttribute("href")).toBe("/review?run=5");
   });
 
   it("invites the user to connect GitHub when nothing is connected", async () => {
@@ -156,6 +156,12 @@ describe("Summary page", () => {
     expect(screen.getByRole("img", { name: "2 of 3 files read" })).toBeTruthy();
     expect(screen.getByText("Could not tell what this file does.")).toBeTruthy();
     expect(screen.getAllByText(/Written by AI. It can be wrong./).length).toBeGreaterThan(0);
+  });
+
+  it("loads from the static-host friendly link /review?run=5", async () => {
+    mockApi({ "GET /api/auth/me": SIGNED_IN, "GET /api/runs/5": DETAIL });
+    renderAt("/review?run=5");
+    await screen.findByText("Retries failed webhook deliveries.");
   });
 
   it("opens a file: check-first reason, AI note, and says the diff isn't stored", async () => {

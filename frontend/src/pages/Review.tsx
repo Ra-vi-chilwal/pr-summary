@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { type RunDetail, type SummaryResult, UNSURE_NOTE, getRun, plural, timeAgo } from "../api";
 import { Icon } from "../components/Icon";
 import { Skeleton } from "../components/Skeleton";
@@ -9,8 +9,15 @@ import { useDiffStore } from "../diffStore";
 
 type State = { kind: "loading" } | { kind: "error" } | { kind: "ok"; data: RunDetail };
 
+/** Links use /review?run=ID: static hosts can serve /review/ but not /review/<any id>. */
+export function reviewPath(runId: number): string {
+  return `/review?run=${runId}`;
+}
+
 export function Review() {
-  const runId = Number(useParams().runId);
+  const params = useParams();
+  const [search] = useSearchParams();
+  const runId = Number(params.runId ?? search.get("run"));
   const diffStore = useDiffStore();
   const [state, setState] = useState<State>({ kind: "loading" });
   const [view, setView] = useState<string>("overview");

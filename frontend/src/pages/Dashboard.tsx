@@ -17,6 +17,7 @@ import { Icon } from "../components/Icon";
 import { RowSkeletons } from "../components/Skeleton";
 import { useDiffStore } from "../diffStore";
 import { useSession } from "../session";
+import { reviewPath } from "./Review";
 
 type Load<T> = { kind: "loading" } | { kind: "error"; message: string } | { kind: "ok"; data: T };
 
@@ -161,7 +162,7 @@ function RunRow({ run }: { run: RunInfo }) {
   return (
     <li>
       {run.summary_id !== null ? (
-        <Link className="row" to={`/review/${run.id}`} aria-label={`View summary: ${run.title || "Untitled diff"}`}>
+        <Link className="row" to={reviewPath(run.id)} aria-label={`View summary: ${run.title || "Untitled diff"}`}>
           {body}
         </Link>
       ) : (
@@ -282,7 +283,7 @@ function Pulls({ repo, onBack }: { repo: Repo; onBack: () => void }) {
     try {
       const result = await summarizePull(repo.owner, repo.name, pr.number);
       if (result.diff) diffStore.set(result.run_id, result.diff);
-      if (result.status === "done") navigate(`/review/${result.run_id}`);
+      if (result.status === "done") navigate(reviewPath(result.run_id));
       else setError(result.message);
     } catch (e) {
       setError(e instanceof ApiError && e.detail ? e.detail : "Couldn't summarize this PR. Nothing was posted.");

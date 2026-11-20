@@ -110,3 +110,14 @@ def test_database_urls_from_neon_use_psycopg3():
     assert normalize_db_url("postgres://u:p@h/db").startswith("postgresql+psycopg://")
     assert normalize_db_url("postgresql+psycopg://u:p@h/db") == "postgresql+psycopg://u:p@h/db"
     assert normalize_db_url("sqlite:///:memory:") == "sqlite:///:memory:"
+
+
+def test_secret_key_also_read_from_jwt_secret_key(monkeypatch):
+    from app.config import Settings
+
+    monkeypatch.delenv("SECRET_KEY", raising=False)
+    monkeypatch.setenv("JWT_SECRET_KEY", "from-jwt-name")
+    assert Settings(_env_file=None).secret_key == "from-jwt-name"
+    monkeypatch.setenv("SECRET_KEY", "from-secret-name")
+    assert Settings(_env_file=None).secret_key == "from-secret-name"
+    assert Settings(_env_file=None, secret_key="kw").secret_key == "kw"
